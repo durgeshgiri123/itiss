@@ -516,31 +516,83 @@ async function loadFile(path, name, cat) {
   setActive(path);
   closeSidebarOnMobile();
 
-  content.innerHTML = `<div class="loading"><div class="spinner"></div><span>Loading ${name}…</span></div>`;
+  content.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <span>Loading ${name}…</span>
+    </div>`;
 
   try {
+
+    // ── PDF SUPPORT ─────────────────────────────
+    if (path.toLowerCase().endsWith('.pdf')) {
+
+      content.innerHTML = `
+        <div class="article-wrapper">
+          <div class="article-meta">
+            <span class="badge"
+              style="background:${cat.color}22; color:${cat.color}">
+              ${CAT_BADGE[cat.id]}
+            </span>
+            <span>${name}</span>
+          </div>
+
+          <iframe
+            src="${path}"
+            style="
+              width:100%;
+              height:85vh;
+              border:1px solid var(--border);
+              border-radius:var(--radius);
+              background:white;
+            ">
+          </iframe>
+        </div>`;
+
+      return;
+    }
+
+    // ── MARKDOWN SUPPORT ───────────────────────
     const res = await fetch(path);
-    if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+
+    if (!res.ok)
+      throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+
     const md = await res.text();
     const html = marked.parse(md);
 
     content.innerHTML = `
       <div class="article-wrapper">
         <div class="article-meta">
-          <span class="badge" style="background:${cat.color}22; color:${cat.color}">${CAT_BADGE[cat.id]}</span>
+          <span class="badge"
+            style="background:${cat.color}22; color:${cat.color}">
+            ${CAT_BADGE[cat.id]}
+          </span>
+
           <span>${name}</span>
         </div>
+
         <div class="md-body">${html}</div>
       </div>`;
+
     content.scrollTop = 0;
+
   } catch (err) {
+
     content.innerHTML = `
       <div class="article-wrapper">
         <div class="error-box">
           ⚠ Could not load file<br><br>
+
           <strong>${path}</strong><br><br>
+
           ${err.message}<br><br>
-          <span style="color:var(--text-dim)">Make sure you opened index.html from a local server (e.g. <code>python -m http.server</code>) — browsers block file:// fetches.</span>
+
+          <span style="color:var(--text-dim)">
+            Make sure you opened index.html
+            from a local server
+            (e.g. <code>python -m http.server</code>)
+          </span>
         </div>
       </div>`;
   }
